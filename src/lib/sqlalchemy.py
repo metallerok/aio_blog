@@ -1,5 +1,8 @@
 from typing import Type
 from sqlalchemy import func
+from sqlalchemy.orm import Query
+from uuid import UUID
+from enum import Enum
 
 from math import ceil
 
@@ -66,6 +69,84 @@ class Model:
 
     filter_field = None
     desc = False
+
+    @classmethod
+    def filters(cls, query: Query, **params) -> Query:
+        filter_field = getattr(cls, cls.filter_field, None) \
+            if cls.filter_field is not None \
+            else getattr(cls, 'name', None)
+
+        if filter_field is not None:
+            if cls.desc:
+                query = query.order_by(filter_field.desc())
+            else:
+                query = query.order_by(filter_field)
+
+        for key, value in params.items():
+            is_not_valid_filter = (
+                    not hasattr(cls, key) or
+                    value is None
+            )
+
+            if is_not_valid_filter:
+                continue
+
+            field = getattr(cls, key, None)
+
+            if isinstance(value, str):
+                query = query.where(field.ilike('%{}%'.format(value)))
+            elif isinstance(value, UUID):
+                query = query.where(field == str(value))
+            elif isinstance(value, Enum):
+                query = query.where(field == value.name)
+            else:
+                query = query.where(field == value)
+
+        return query
+
+    @classmethod
+    def revoke_filters(
+            cls,
+            query: Query,
+            **params
+    ) -> Query:
+        for key, value in params.items():
+            is_not_valid_filter = (
+                    not hasattr(cls, key) or
+                    value is None
+            )
+
+            if is_not_valid_filter:
+                continue
+
+            field = getattr(cls, key, None)
+
+            query = query.where(field != value)
+
+        return query
+
+    @classmethod
+    def get_by_filters(
+            cls,
+            conn,
+            query: Query,
+            page: int = 1,
+            page_size: int = DEFAULT_PAGE_SIZE,
+            rev_filters=None,
+            **params: dict
+    ) -> AsyncPagination:
+        if rev_filters is None:
+            rev_filters = {}
+        filters_ = cls.filters(query, **params)
+        return AsyncPagination(
+            conn,
+            query=cls.revoke_filters(
+                query=filters_,
+                **rev_filters
+            ),
+            page=page,
+            page_size=page_size
+        )
 
     def to_dict(self):
         return dict((prop.key, getattr(self, prop.key))

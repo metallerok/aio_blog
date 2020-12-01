@@ -41,7 +41,7 @@ def main(config_path: str):
     app.on_startup.append(init_db)
     app.on_cleanup.append(close_db)
     app.router.add_route('*', '/api_info', api_info.ApiInfoController, name='api_info')
-    app.router.add_route('*', '/users', users.UsersCollectionController, name='users')
+    app.router.add_route('*', '/api/v1/users', users.UsersCollectionController, name='users')
     web.run_app(app)
 
 

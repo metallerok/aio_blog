@@ -1,24 +1,26 @@
 from aiohttp import web
 from src.models.user import User
-from src.schemas.user import UserSchema
+from src.schemas.user import (
+    UserSchema,
+    UsersFilterSchema,
+)
 from sqlalchemy import select
-from src.lib.sqlalchemy import AsyncPagination, with_pagination_meta
+import lib.sqlalchemy as salib
 import json
 
 
 class UsersCollectionController(web.View):
     async def get(self):
+        data = UsersFilterSchema().load(self.request.query)
         async with self.request.app['db'].acquire() as conn:
             query = select([User]).where(
                 User.deleted.is_(False)
             )
-
-            pagination = AsyncPagination(conn, query, page=1, page_size=1)
+            pagination = User.get_by_filters(conn, query=query, **data)
 
         items = UserSchema(many=True).dump(await pagination.items)
-
-        return web.Response(
+        return web.json_response(
             text=json.dumps(
-                await with_pagination_meta(items, pagination)
+                await salib.with_pagination_meta(items, pagination)
             )
         )
