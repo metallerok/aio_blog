@@ -1,7 +1,9 @@
 from aiohttp import web
 from aiopg.sa import create_engine
 import os
+import venusian
 from paste.deploy import appconfig
+import resources
 from src.resources.api.v1 import api_info
 from src.resources.api.v1 import users
 
@@ -40,8 +42,7 @@ def main(config_path: str):
     app = init_app(config)
     app.on_startup.append(init_db)
     app.on_cleanup.append(close_db)
-    app.router.add_route('*', '/api_info', api_info.ApiInfoController, name='api_info')
-    app.router.add_route('*', '/api/v1/users', users.UsersCollectionController, name='users')
+    venusian.Scanner(api=app.router).scan(resources)
     web.run_app(app)
 
 

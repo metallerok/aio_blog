@@ -5,10 +5,12 @@ from src.schemas.user import (
     UsersFilterSchema,
 )
 from sqlalchemy import select
+from resources.api.v1 import api_resource
 import lib.sqlalchemy as salib
 import json
 
 
+@api_resource("/users")
 class UsersCollectionController(web.View):
     async def get(self):
         data = UsersFilterSchema().load(self.request.query)
