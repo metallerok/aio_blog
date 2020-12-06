@@ -15,6 +15,7 @@ requires = [
     'aioredis',
     'aiohttp==3.7.3',
     'async-timeout==3.0.1',
+    'gunicorn==20.0.4',
     'asyncpg',
     'aiopg',
     'asyncpgsa',
@@ -28,7 +29,7 @@ setup(
     install_requires=requires,
     entry_points={
         'paste.app_factory': [
-            'main = main:main',
+            'main = main:app_factory',
         ],
     }
 )

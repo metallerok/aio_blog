@@ -11,4 +11,5 @@ logs/*
 files/*
 development.ini
 config.ini
+gunicorn.conf.py
 .idea

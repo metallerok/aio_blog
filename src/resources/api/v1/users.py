@@ -20,9 +20,8 @@ class UsersCollectionController(web.View):
             )
             pagination = User.get_by_filters(conn, query=query, **data)
 
-        items = UserSchema(many=True).dump(await pagination.items)
-        return web.json_response(
-            text=json.dumps(
-                await salib.with_pagination_meta(items, pagination)
-            )
-        )
+            db_items = await pagination.items
+            items = UserSchema(many=True).dump(db_items)
+            result = await salib.with_pagination_meta(items, pagination)
+
+        return web.json_response(text=json.dumps(result))
