@@ -9,7 +9,8 @@ class ApiInfoController(web.View):
         async with self.request.app['db'].acquire() as conn:
             cursor = await conn.execute("select 'success';")
             result = await cursor.fetchone()
-        return web.Response(
+
+        return web.json_response(
             text=json.dumps({
                 "status": "ok",
                 "result": result[0]
