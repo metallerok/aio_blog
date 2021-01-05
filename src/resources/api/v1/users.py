@@ -14,6 +14,7 @@ import json
 class UsersCollectionController(web.View):
     async def get(self):
         data = UsersFilterSchema().load(self.request.query)
+
         async with self.request.app['db'].acquire() as conn:
             query = select([User]).where(
                 User.deleted.is_(False)

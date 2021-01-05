@@ -179,6 +179,3 @@ class Model:
 
 def base_model() -> Type[Model]:
     return Model
-
-
-

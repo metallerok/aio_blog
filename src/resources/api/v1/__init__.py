@@ -1,6 +1,6 @@
 from aiohttp import web
 from typing import Optional
-from functools import partial, wraps
+from functools import partial
 from lib.decorators import resource
 
 from lib import BASE_URL_PREFIX_V1

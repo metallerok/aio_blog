@@ -1,7 +1,3 @@
-# Description: 
-# Author: Kireev Georgiy <metallerok@gmail.com>
-# Copyright (C) 2020 by Kireev Georgiy
-
 import datetime as dt
 
 BASE_URL_PREFIX_V1 = '/api/v1'
