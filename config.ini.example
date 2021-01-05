@@ -1,9 +1,12 @@
 [DEFAULT]
-postgres_dsn = postgresql+aiopg:///aio_blog
+db_name = aio_blog
+db_host = localhost
+db_port = 5432
+db_user = aio_blog
+db_password = aio_blog
 
 [app:main]
 use = egg:aio_blog
-postgres_sqlalchemy_dsn = %(postgres_dsn)s
 
 [alembic]
 script_location = alembic
