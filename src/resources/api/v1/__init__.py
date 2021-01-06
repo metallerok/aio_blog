@@ -18,4 +18,4 @@ def url(url_: Optional[str] = None) -> str:
     if url_ is None:
         return BASE_URL_PREFIX_V1
     else:
-        return "%s/%s" % (BASE_URL_PREFIX_V1, url_)
+        return "%s%s" % (BASE_URL_PREFIX_V1, url_)

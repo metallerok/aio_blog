@@ -7,6 +7,8 @@ from paste.deploy import appconfig
 from resources.api.v1 import routes
 from resources import api
 from middleware.logging import logging
+from middleware.json import json_handler
+from middleware.errors import error_middleware
 
 logger = getLogger("aio_blog")
 
@@ -27,7 +29,9 @@ def init_app(config):
 
     app = web.Application(
         middlewares=[
-            logging
+            json_handler,
+            error_middleware,
+            logging,
         ]
     )
     app['config'] = config

@@ -1,11 +1,13 @@
 import pytest
 import logging
-from sqlalchemy import create_engine
-from models.meta import Base
-from sqlalchemy.pool import NullPool
-
+import venusian
 from main import app_factory
 import configparser
+from sqlalchemy import create_engine
+from sqlalchemy.pool import NullPool
+from src import models
+from src.models.meta import Base
+venusian.Scanner().scan(models)
 
 config = configparser.ConfigParser()
 config_path = "./pytest.ini"
@@ -33,7 +35,7 @@ def pytest_configure(config):
 
 @pytest.fixture(scope="module")
 def create_db():
-    logger.info("Creating test database")
+    logger.debug("Creating test database")
 
     db_name = config.get("DEFAULT", "db_name")
     postgres_dsn = _get_db_dsn_from_config()
@@ -55,7 +57,7 @@ def create_db():
         "db_dsn": postgres_dsn,
     }
 
-    logger.info("Destroying test database")
+    logger.debug("Destroying test database")
 
     engine = create_engine(
         postgres_dsn,
@@ -72,18 +74,20 @@ def create_db():
 
 @pytest.fixture(scope="module")
 def create_tables(create_db):
-    logger.info("Create tables")
+    logger.debug("Create tables")
+
     engine = create_engine(
         f"{create_db['db_dsn']}/{create_db['db_name']}",
-        poolclass=NullPool
+        poolclass=NullPool,
     )
+
     Base.metadata.bind = engine
     Base.metadata.create_all()
 
 
 @pytest.fixture
 def client(loop, aiohttp_client, create_tables):
-    logger.info("Create test client")
+    logger.debug("Create test client")
 
     app = app_factory(
         global_config=config["DEFAULT"],

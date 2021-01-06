@@ -1,7 +1,25 @@
-from marshmallow import Schema, fields
+import json
+from marshmallow import Schema, fields, validate
+from aiohttp.web import HTTPUnprocessableEntity
 from app_types.users import UserType
-# from lib.errors.base import HTTPUnprocessableEntity
 from src.schemas.base import BasePaginationSchema
+
+phone_validator = validate.Regexp(
+    "^((7)+([0-9]){10})$", 0,
+    'Invalid phone format'
+)
+
+
+def _deserialize_user_type(value):
+    value = value.upper()
+    if value in [t.name for t in UserType]:
+        return UserType[value]
+    else:
+        raise HTTPUnprocessableEntity(
+            text=json.dumps({
+                "type": ["Unsupported value"],
+            })
+        )
 
 
 class UserSchema(Schema):
@@ -37,18 +55,28 @@ class UserSchema(Schema):
 
     @staticmethod
     def deserialize_type(value):
-        value = value.upper()
-        if value in [t.name for t in UserType]:
-            return UserType[value]
-        else:
-            raise Exception
-            # raise HTTPUnprocessableEntity(
-            #     description={
-            #         "type": {
-            #             "value": "unsupported value"
-            #         },
-            #     }
-            # )
+        return _deserialize_user_type(value)
+
+
+class UserInsertSchema(Schema):
+    login = fields.String(required=True)
+    password = fields.String(required=True)
+
+    phone = fields.String(required=False, default=None, missing=None, validate=phone_validator)
+    email = fields.Email(required=False, default=None, missing=None)
+
+    name = fields.String(required=False)
+    surname = fields.String(required=False)
+    middle_name = fields.String(required=False)
+
+    type = fields.Method(
+        serialize="serialize_type",
+        deserialize="deserialize_type",
+    )
+
+    @staticmethod
+    def deserialize_type(value):
+        return _deserialize_user_type(value)
 
 
 class UsersFilterSchema(BasePaginationSchema):
@@ -77,15 +105,4 @@ class UsersFilterSchema(BasePaginationSchema):
 
     @staticmethod
     def deserialize_type(value):
-        value = value.upper()
-        if value in [t.name for t in UserType]:
-            return UserType[value]
-        else:
-            # raise HTTPUnprocessableEntity(
-            #     description={
-            #         "type": {
-            #             "value": "unsupported value"
-            #         },
-            #     }
-            # )
-            raise Exception
+        return _deserialize_user_type(value)

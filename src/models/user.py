@@ -14,6 +14,7 @@ from uuid import uuid4
 
 class User(Base):
     __tablename__ = "user"
+    __table_args__ = {'extend_existing': True}
 
     uuid = Column(UUID, nullable=False, primary_key=True, default=lambda _: str(uuid4()))
 
