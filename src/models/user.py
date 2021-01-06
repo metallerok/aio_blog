@@ -1,6 +1,6 @@
 import bcrypt
 from src.models.meta import Base
-from enum import Enum
+from app_types.users import UserType
 from sqlalchemy import Column, func
 from sqlalchemy.sql.sqltypes import (
     String,
@@ -10,16 +10,6 @@ from sqlalchemy.sql.sqltypes import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from uuid import uuid4
-
-
-class UserType(Enum):
-    ADMIN = 1
-    USER = 2
-    EXTERNAL_SYSTEM = 3
-
-    @classmethod
-    def list(cls):
-        return list(map(lambda c: c.name, cls))
 
 
 class User(Base):
@@ -63,6 +53,7 @@ class User(Base):
     @staticmethod
     def make_password_hash(password):
         hash_ = bcrypt.hashpw(password=password.encode('utf-8'), salt=bcrypt.gensalt())
+
         return hash_.decode('utf-8')
 
     def is_password_valid(self, password):

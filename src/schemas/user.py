@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields
-from src.models.user import UserType
+from app_types.users import UserType
 # from lib.errors.base import HTTPUnprocessableEntity
 from src.schemas.base import BasePaginationSchema
 

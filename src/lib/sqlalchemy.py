@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, List, Any
 from sqlalchemy import func
 from sqlalchemy.orm import Query
 from uuid import UUID
@@ -12,55 +12,36 @@ from sqlalchemy import inspect
 DEFAULT_PAGE_SIZE = 20
 
 
-async def paginate(conn, query, page, page_size):
-    selectable = query.limit(page_size).offset(
-        (page - 1) * page_size
-    )
-    cursor = await conn.execute(selectable)
-    return await cursor.fetchall()
+class Pagination:
 
-
-class AsyncPagination:
-    __slots__ = ['conn', 'query', 'page', 'page_size']
-
-    def __init__(self, conn, query, page: int, page_size: int):
-        self.conn = conn
-        self.query = query
+    def __init__(self, items: List[Any], total: int, page: int, page_size: int):
+        self.items = items
+        self.total = total
         self.page = page
         self.page_size = page_size
 
     @property
-    async def items(self) -> list:
-        return await paginate(
-            self.conn,
-            self.query,
-            self.page,
-            self.page_size
-        )
-
-    @property
-    async def total_pages(self) -> int:
-        total = await self.total
-        return ceil(total / self.page_size) or 1
-
-    @property
-    async def total(self) -> int:
-        q = self.query.with_only_columns([func.count()]).order_by(None)
-        cursor = await self.conn.execute(q)
-        total = await cursor.scalar()
-        return total
+    def total_pages(self) -> int:
+        return ceil(self.total / self.page_size) or 1
 
 
-async def with_pagination_meta(models: list, pagination: AsyncPagination):
-    page = pagination.page
-    total_pages = await pagination.total_pages
-    page_size = pagination.page_size
+async def paginate(conn, query, page, page_size):
+    selectable = query.limit(page_size).offset(
+        (page - 1) * page_size
+    )
+
+    cursor = await conn.execute(selectable)
+
+    return await cursor.fetchall()
+
+
+def with_pagination_meta(items: List[Any], pagination: Pagination):
     return {
-        'data': models,
+        'data': items,
         'meta': {
-            'current_page': page,
-            'total_pages': total_pages,
-            'page_size': page_size
+            'current_page': pagination.page,
+            'total_pages': pagination.total_pages,
+            'page_size': pagination.page_size
         }
     }
 
@@ -69,6 +50,28 @@ class Model:
 
     filter_field = None
     desc = False
+
+    @classmethod
+    async def _get_paginated_items(
+            cls, conn, query: Query, page: int, page_size: int
+    ) -> List[Type['Model']]:
+        items = await paginate(
+            conn,
+            query=query,
+            page=page,
+            page_size=page_size,
+        )
+
+        return items
+
+    @classmethod
+    async def _get_total_items_count(cls, conn, query: Query) -> int:
+        q = query.with_only_columns([func.count()]).order_by(None)
+
+        cursor = await conn.execute(q)
+        total = await cursor.scalar()
+
+        return total
 
     @classmethod
     def filters(cls, query: Query, **params) -> Query:
@@ -126,7 +129,7 @@ class Model:
         return query
 
     @classmethod
-    def get_by_filters(
+    async def get_by_filters(
             cls,
             conn,
             query: Query,
@@ -134,19 +137,22 @@ class Model:
             page_size: int = DEFAULT_PAGE_SIZE,
             rev_filters=None,
             **params: dict
-    ) -> AsyncPagination:
+    ) -> Pagination:
         if rev_filters is None:
             rev_filters = {}
+
         filters_ = cls.filters(query, **params)
-        return AsyncPagination(
-            conn,
-            query=cls.revoke_filters(
-                query=filters_,
-                **rev_filters
-            ),
-            page=page,
-            page_size=page_size
+
+        query = cls.revoke_filters(
+            query=filters_,
+            **rev_filters
         )
+
+        items = await cls._get_paginated_items(conn, query, page, page_size)
+
+        total = await cls._get_total_items_count(conn, query)
+
+        return Pagination(items, total, page, page_size)
 
     def to_dict(self):
         return dict((prop.key, getattr(self, prop.key))
