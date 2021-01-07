@@ -1,5 +1,3 @@
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import MetaData
 
-from src.lib.sqlalchemy import base_model
-
-Base = declarative_base(cls=base_model())
+metadata = MetaData()

@@ -51,7 +51,10 @@ class UserSchema(Schema):
 
     @staticmethod
     def serialize_type(obj):
-        return obj.type.name
+        if type(obj.type) == UserType:
+            return obj.type.name
+        else:
+            return obj.type
 
     @staticmethod
     def deserialize_type(value):

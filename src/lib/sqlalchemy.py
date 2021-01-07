@@ -1,13 +1,10 @@
-from typing import Type, List, Any
-from sqlalchemy import func
+from typing import List, Any
+from sqlalchemy import func, Table
 from sqlalchemy.orm import Query
 from uuid import UUID
 from enum import Enum
 
 from math import ceil
-
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy import inspect
 
 DEFAULT_PAGE_SIZE = 20
 
@@ -46,7 +43,7 @@ def with_pagination_meta(items: List[Any], pagination: Pagination):
     }
 
 
-class Model:
+class SaQuery:
 
     filter_field = None
     desc = False
@@ -54,7 +51,7 @@ class Model:
     @classmethod
     async def _get_paginated_items(
             cls, conn, query: Query, page: int, page_size: int
-    ) -> List[Type['Model']]:
+    ) -> List['Table']:
         items = await paginate(
             conn,
             query=query,
@@ -74,27 +71,27 @@ class Model:
         return total
 
     @classmethod
-    def filters(cls, query: Query, **params) -> Query:
-        filter_field = getattr(cls, cls.filter_field, None) \
-            if cls.filter_field is not None \
-            else getattr(cls, 'name', None)
-
-        if filter_field is not None:
-            if cls.desc:
-                query = query.order_by(filter_field.desc())
-            else:
-                query = query.order_by(filter_field)
+    def filters(cls, table, query: Query, **params) -> Query:
+        # filter_field = getattr(cls, cls.filter_field, None) \
+        #     if cls.filter_field is not None \
+        #     else getattr(cls, 'name', None)
+        #
+        # if filter_field is not None:
+        #     if cls.desc:
+        #         query = query.order_by(filter_field.desc())
+        #     else:
+        #         query = query.order_by(filter_field)
 
         for key, value in params.items():
             is_not_valid_filter = (
-                    not hasattr(cls, key) or
-                    value is None
+                not hasattr(table, key) or
+                value is None
             )
 
             if is_not_valid_filter:
                 continue
 
-            field = getattr(cls, key, None)
+            field = getattr(table.columns, key, None)
 
             if isinstance(value, str):
                 query = query.where(field.ilike('%{}%'.format(value)))
@@ -110,19 +107,20 @@ class Model:
     @classmethod
     def revoke_filters(
             cls,
+            table,
             query: Query,
             **params
     ) -> Query:
         for key, value in params.items():
             is_not_valid_filter = (
-                    not hasattr(cls, key) or
-                    value is None
+                not hasattr(table, key) or
+                value is None
             )
 
             if is_not_valid_filter:
                 continue
 
-            field = getattr(cls, key, None)
+            field = getattr(table.columns, key, None)
 
             query = query.where(field != value)
 
@@ -132,6 +130,7 @@ class Model:
     async def get_by_filters(
             cls,
             conn,
+            table,
             query: Query,
             page: int = 1,
             page_size: int = DEFAULT_PAGE_SIZE,
@@ -141,9 +140,10 @@ class Model:
         if rev_filters is None:
             rev_filters = {}
 
-        filters_ = cls.filters(query, **params)
+        filters_ = cls.filters(table, query, **params)
 
         query = cls.revoke_filters(
+            table,
             query=filters_,
             **rev_filters
         )
@@ -154,34 +154,26 @@ class Model:
 
         return Pagination(items, total, page, page_size)
 
-    def to_dict(self):
-        return dict((prop.key, getattr(self, prop.key))
-                    for prop in inspect(self).mapper.iterate_properties)
+    # def getattr_from_column_name(self, name, default=Ellipsis):
+    #     for attr, column in inspect(self.__class__).c.items():
+    #         if column.name == name:
+    #             return getattr(self, attr)
+    #
+    #     if default is Ellipsis:
+    #         raise KeyError
+    #     else:
+    #         return default
 
-    def getattr_from_column_name(self, name, default=Ellipsis):
-        for attr, column in inspect(self.__class__).c.items():
-            if column.name == name:
-                return getattr(self, attr)
+    # @classmethod
+    # def is_exists(cls, model_id: int = None, **fields) -> bool:
+    #     pass
 
-        if default is Ellipsis:
-            raise KeyError
-        else:
-            return default
+    # @classmethod
+    # def exists_or_not_found(cls, model_id: int = None, **fields) -> None:
+    #     if cls.is_exists(model_id, **fields):
+    #         return
+    #
+    #     raise NoResultFound({'id': ['No row was found by id %d' % model_id]})
 
-    @classmethod
-    def is_exists(cls, model_id: int = None, **fields) -> bool:
-        pass
-
-    @classmethod
-    def exists_or_not_found(cls, model_id: int = None, **fields) -> None:
-        if cls.is_exists(model_id, **fields):
-            return
-
-        raise NoResultFound({'id': ['No row was found by id %d' % model_id]})
-
-    def __str__(self):
-        return str(self.to_dict())
-
-
-def base_model() -> Type[Model]:
-    return Model
+# def base_model() -> Type[Model]:
+#     return Model

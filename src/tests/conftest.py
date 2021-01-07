@@ -5,9 +5,10 @@ from main import app_factory
 import configparser
 from sqlalchemy import create_engine
 from sqlalchemy.pool import NullPool
+
 from src import models
-from src.models.meta import Base
 venusian.Scanner().scan(models)
+
 
 config = configparser.ConfigParser()
 config_path = "./pytest.ini"
@@ -74,6 +75,7 @@ def create_db():
 
 @pytest.fixture(scope="module")
 def create_tables(create_db):
+    from models.meta import metadata
     logger.debug("Create tables")
 
     engine = create_engine(
@@ -81,8 +83,7 @@ def create_tables(create_db):
         poolclass=NullPool,
     )
 
-    Base.metadata.bind = engine
-    Base.metadata.create_all()
+    metadata.create_all(engine)
 
 
 @pytest.fixture
