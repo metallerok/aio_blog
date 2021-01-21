@@ -13,6 +13,6 @@ async def error_middleware(request, handler):
     except HTTPException as ex:
         if ex.status_code == 404:
             return no_result_found_handler(ex)
-        raise
+        raise ex
     except marshmallow.exceptions.ValidationError as ex:
         return validation_error_handler(ex)

@@ -43,9 +43,6 @@ class UserSchema(Schema):
     active = fields.Boolean()
     deleted = fields.Boolean()
 
-    # access_level_id = fields.Integer()
-    # access_level = fields.Nested(AccessLevelSchema)
-
     created = fields.DateTime()
     updated = fields.DateTime()
 
@@ -68,13 +65,14 @@ class UserInsertSchema(Schema):
     phone = fields.String(required=False, default=None, missing=None, validate=phone_validator)
     email = fields.Email(required=False, default=None, missing=None)
 
-    name = fields.String(required=False)
-    surname = fields.String(required=False)
-    middle_name = fields.String(required=False)
+    name = fields.String(required=False, missing=None)
+    surname = fields.String(required=False, missing=None)
+    middle_name = fields.String(required=False, missing=None)
 
     type = fields.Method(
         serialize="serialize_type",
         deserialize="deserialize_type",
+        missing=UserType.USER
     )
 
     @staticmethod
