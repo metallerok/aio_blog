@@ -22,11 +22,25 @@ class UsersBLOC:
             cls, conn,
             with_deleted: bool = False, **filters: dict,
     ) -> Pagination:
+
+        login = filters.pop("login", None)
+        email = filters.pop("email", None)
+
         query = select([user])
 
         if not with_deleted:
             query = query.where(
                 user.c.deleted.is_(False)
+            )
+
+        if login:
+            query = query.where(
+                user.c.login == login
+            )
+
+        if email:
+            query = query.where(
+                user.c.email == email
             )
 
         pagination = await SaQuery.get_by_filters(conn, user, query, **filters)

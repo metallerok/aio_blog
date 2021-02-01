@@ -84,7 +84,7 @@ class SaQuery:
 
         for key, value in params.items():
             is_not_valid_filter = (
-                not hasattr(table, key) or
+                not hasattr(table.columns, key) or
                 value is None
             )
 
