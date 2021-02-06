@@ -2,7 +2,7 @@ import json
 from marshmallow import Schema, fields, validate
 from aiohttp.web import HTTPUnprocessableEntity
 from app_types.users import UserType
-from src.schemas.base import BasePaginationSchema
+from schemas.base import BasePaginationSchema
 
 phone_validator = validate.Regexp(
     "^((7)+([0-9]){10})$", 0,

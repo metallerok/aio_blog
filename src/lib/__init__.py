@@ -1,5 +1,3 @@
-import datetime as dt
-
 BASE_URL_PREFIX_V1 = '/api/v1'
 
 FILE_HEAD_SIZE = 1024
