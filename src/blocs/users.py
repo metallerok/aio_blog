@@ -67,3 +67,16 @@ class UsersBLOC:
         res = await cursor.fetchone()
 
         return res
+
+    @classmethod
+    async def get_by_uuid(cls, conn,  uuid: str, delted: bool = False):
+        query = select([user]).where(user.c.uuid == uuid)
+
+        if delted:
+            query = query.where(user.c.deleted is True)
+
+        cursor = await conn.execute(query)
+
+        res = await cursor.fetchone()
+
+        return res
