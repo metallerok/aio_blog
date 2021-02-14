@@ -40,7 +40,7 @@ async def test_create_user(client):
 
     resp_body = await resp.json()
 
-    assert "password" not in resp_body
+    assert "password" in resp_body
     assert data["phone"] == resp_body["phone"]
     assert data["email"] == resp_body["email"]
     assert data["type"] == resp_body["type"]

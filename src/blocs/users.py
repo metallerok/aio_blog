@@ -22,11 +22,25 @@ class UsersBLOC:
             cls, conn,
             with_deleted: bool = False, **filters: dict,
     ) -> Pagination:
+
+        login = filters.pop("login", None)
+        email = filters.pop("email", None)
+
         query = select([user])
 
         if not with_deleted:
             query = query.where(
                 user.c.deleted.is_(False)
+            )
+
+        if login:
+            query = query.where(
+                user.c.login == login
+            )
+
+        if email:
+            query = query.where(
+                user.c.email == email
             )
 
         pagination = await SaQuery.get_by_filters(conn, user, query, **filters)
@@ -49,6 +63,19 @@ class UsersBLOC:
         ).returning(literal_column('*'))
 
         cursor = await conn.execute(qr)
+
+        res = await cursor.fetchone()
+
+        return res
+
+    @classmethod
+    async def get_by_uuid(cls, conn,  uuid: str, delted: bool = False):
+        query = select([user]).where(user.c.uuid == uuid)
+
+        if delted:
+            query = query.where(user.c.deleted is True)
+
+        cursor = await conn.execute(query)
 
         res = await cursor.fetchone()
 
