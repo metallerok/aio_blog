@@ -6,7 +6,7 @@ import configparser
 from sqlalchemy import create_engine
 from sqlalchemy.pool import NullPool
 
-from src import models
+import models
 venusian.Scanner().scan(models)
 
 

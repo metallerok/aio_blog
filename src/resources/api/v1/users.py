@@ -1,7 +1,7 @@
 import logging
 from psycopg2 import errors as db_errors
 from aiohttp import web
-from src.schemas.user import (
+from schemas.user import (
     UserSchema,
     UsersFilterSchema,
     UserInsertSchema,
@@ -49,3 +49,16 @@ class UsersCollectionController(web.View):
         return web.json_response(
             text=json.dumps(UserSchema().dump(res))
         )
+
+
+@api_resource("/users/{uuid}")
+class UserItemController(web.View):
+    async def get(self):
+        uuid = self.request.match_info["uuid"]
+
+        async with self.request.app['db'].acquire() as conn:
+            user = await UsersBLOC.get_by_uuid(conn, uuid)
+
+        user = UserSchema().dump(user)
+
+        return web.json_response(text=json.dumps(user))

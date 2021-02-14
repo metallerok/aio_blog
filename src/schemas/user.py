@@ -2,7 +2,7 @@ import json
 from marshmallow import Schema, fields, validate
 from aiohttp.web import HTTPUnprocessableEntity
 from app_types.users import UserType
-from src.schemas.base import BasePaginationSchema
+from schemas.base import BasePaginationSchema
 
 phone_validator = validate.Regexp(
     "^((7)+([0-9]){10})$", 0,
@@ -26,7 +26,7 @@ class UserSchema(Schema):
     uuid = fields.UUID()
 
     login = fields.String(allow_none=True)
-    password = fields.String(load_only=True, required=False)
+    password = fields.String(required=False)
 
     name = fields.String(allow_none=True)
     surname = fields.String(allow_none=True)
@@ -92,10 +92,6 @@ class UsersFilterSchema(BasePaginationSchema):
     phone = fields.String(allow_none=True)
     email = fields.Email(allow_none=True)
 
-    type = fields.Method(
-        deserialize="deserialize_type",
-    )
-
     active = fields.Boolean()
     deleted = fields.Boolean()
 
@@ -103,7 +99,3 @@ class UsersFilterSchema(BasePaginationSchema):
 
     created = fields.Date()
     updated = fields.Date()
-
-    @staticmethod
-    def deserialize_type(value):
-        return _deserialize_user_type(value)
